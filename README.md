@@ -222,3 +222,8 @@ GPU tests require PyTorch (`pip install -e ".[gpu]"`).
 ## License
 
 MIT
+
+---
+
+**Credit:** TicTu Tech  
+**Developer:** Thanh Solar NEXT
