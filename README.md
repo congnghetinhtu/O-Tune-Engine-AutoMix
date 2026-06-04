@@ -1,4 +1,4 @@
-# 🎧 O-Tune Engine v2
+# 🎧 O-Tune Engine
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-≥3.10-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
@@ -16,7 +16,7 @@
 
 ---
 
-## 🥊 How O‑Tune Stacks Up Against Apple Music AutoMix
+## 🥊 About O‑Tune Engine
 
 Apple Music's **AutoMix** (or Crossfade, or whatever they call it in your region) is basically a dimmer switch between songs. It fades one out while fading the next in — no analysis, no beat-matching, no nothing. It works, but it's blind.
 
@@ -25,19 +25,18 @@ Apple Music's **AutoMix** (or Crossfade, or whatever they call it in your region
 | Feature | 🍎 Apple Music AutoMix | 🎧 O‑Tune Engine |
 |---|---|---|
 | **Tempo detection** | ❌ Nope | ✅ Catches half-time, double-time, even swing |
-| **Tempo ramping** | ❌ Abrupt jump | ✅ Pitch‑preserving phase vocoder — no chipmunk effect |
+| **Tempo ramping** | ❌ Abrupt jump | ✅ Pitch‑preserving phase vocoder|
 | **Beat alignment** | ❌ Ignored | ✅ Snaps to phrase → downbeat → beat → micro‑sample |
 | **Key matching** | ❌ Doesn't care | ✅ Krumhansl‑Schmuckler + compatibility scoring |
 | **Vocal awareness** | ❌ Vocals clash all the time | ✅ Splits lows/mids/highs, ducks only what needs ducking |
 | **Energy analysis** | ❌ None | ✅ Spectral energy + variation + mood estimation |
 | **Transition styles** | ❌ One boring fade | ✅ 6 different styles, chosen per transition |
 | **Smart ordering** | ❌ Album order or bust | ✅ Mood curve + harmonic compatibility |
-| **GPU acceleration** | ❌ N/A | ✅ Apple Silicon MPS — M1 through M4 |
-| **Per‑pair export** | ❌ One mix blob | ✅ Every transition saved as its own file |
+| **Per‑pair export** | ❌ One mix blob (Pre-render) | ✅ Every transition saved as its own file |
 | **Loudness** | ❌ Raw levels | ✅ EBU R128 (−14 LUFS) — consistent volume everywhere |
 | **Genre detection** | ❌ None | ✅ 17 genre tags |
 
-**In short:** Apple Music AutoMix is a crossfader. O‑Tune Engine is a DJ who actually preps the set.
+**In short:** Apple Music AutoMix is a crossfader. O‑Tune Engine is a DJ who actually preps the set automatically.
 
 ---
 
