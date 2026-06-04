@@ -250,7 +250,11 @@ GPU tests require PyTorch (`pip install -e ".[gpu]"`).
 
 ## 📄 License
 
-MIT
+**MIT** — Free, permissive, open‑source.
+
+You can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software. The only requirement is that you include the original copyright notice and permission notice in all copies or substantial portions of the software.
+
+**In plain language:** Do whatever you want — just keep the credit notice.
 
 ---
 
