@@ -9,72 +9,73 @@
 </p>
 
 <p align="center">
-  <b>Apple Music‑style automated DJ mixing engine</b><br>
-  Analyzes tracks for tempo, key, energy, vocals & structure —<br>
-then creates seamless transitions with vocal‑aware frequency‑sweep crossfades.
+  <b>An Apple Music‑style automated DJ mixing engine for your own music.</b><br>
+  Throw in a folder of songs — it figures out tempo, key, energy, vocals, and structure,<br>
+  then weaves them together with seamless, vocal‑aware crossfades.
+</p>
 
 ---
 
-## 🥊 O‑Tune vs Apple Music AutoMix
+## 🥊 How O‑Tune Stacks Up Against Apple Music AutoMix
 
-Apple Music's **AutoMix** (also called Crossfade / Automix on iOS/macOS) is a simple feature that applies a short equal‑power crossfade between consecutive songs. It does **no analysis** — no tempo detection, no key matching, no beat alignment, no vocal awareness. The result is often a generic blend that can clash when tempos differ or vocals overlap.
+Apple Music's **AutoMix** (or Crossfade, or whatever they call it in your region) is basically a dimmer switch between songs. It fades one out while fading the next in — no analysis, no beat-matching, no nothing. It works, but it's blind.
 
-**O‑Tune Engine** goes far beyond:
+**O‑Tune is the opposite of blind.** It listens hard:
 
 | Feature | 🍎 Apple Music AutoMix | 🎧 O‑Tune Engine |
 |---|---|---|
-| **Tempo detection** | ❌ None | ✅ Half/double‑time corrected, swing‑aware |
-| **Tempo ramping** | ❌ Abrupt BPM jump | ✅ Pitch‑preserving phase vocoder ramp |
-| **Beat alignment** | ❌ No alignment | ✅ Phrase → downbeat → beat‑phase → micro‑correlation |
-| **Key matching** | ❌ None | ✅ Krumhansl‑Schmuckler + compatibility scoring |
-| **Vocal awareness** | ❌ Can clash | ✅ LR4 3‑band frequency sweep + ducking |
+| **Tempo detection** | ❌ Nope | ✅ Catches half-time, double-time, even swing |
+| **Tempo ramping** | ❌ Abrupt jump | ✅ Pitch‑preserving phase vocoder — no chipmunk effect |
+| **Beat alignment** | ❌ Ignored | ✅ Snaps to phrase → downbeat → beat → micro‑sample |
+| **Key matching** | ❌ Doesn't care | ✅ Krumhansl‑Schmuckler + compatibility scoring |
+| **Vocal awareness** | ❌ Vocals clash all the time | ✅ Splits lows/mids/highs, ducks only what needs ducking |
 | **Energy analysis** | ❌ None | ✅ Spectral energy + variation + mood estimation |
-| **Transition styles** | ❌ Uniform crossfade only | ✅ 6 context‑aware styles |
-| **Smart ordering** | ❌ Album/playlist order only | ✅ Mood progression + key/energy optimisation |
-| **GPU acceleration** | ❌ N/A | ✅ Apple Silicon MPS (M1–M4) |
-| **Per‑pair export** | ❌ Single mix only | ✅ Each transition saved as a separate WAV |
-| **Loudness normalisation** | ❌ None | ✅ EBU R128 (−14 LUFS) |
-| **Genre detection** | ❌ None | ✅ 17 genres |
+| **Transition styles** | ❌ One boring fade | ✅ 6 different styles, chosen per transition |
+| **Smart ordering** | ❌ Album order or bust | ✅ Mood curve + harmonic compatibility |
+| **GPU acceleration** | ❌ N/A | ✅ Apple Silicon MPS — M1 through M4 |
+| **Per‑pair export** | ❌ One mix blob | ✅ Every transition saved as its own file |
+| **Loudness** | ❌ Raw levels | ✅ EBU R128 (−14 LUFS) — consistent volume everywhere |
+| **Genre detection** | ❌ None | ✅ 17 genre tags |
 
-**Bottom line:** Apple Music AutoMix is a linear crossfade. O‑Tune Engine is a full musical analysis and mixing pipeline that treats every transition as a DJ would — with tempo sync, beat‑matched phrasing, harmonic mixing, and vocal‑protected blends.
+**In short:** Apple Music AutoMix is a crossfader. O‑Tune Engine is a DJ who actually preps the set.
 
 ---
 
-## ✨ Features
+## ✨ What Makes It Special
 
 | | |
 |---|---|
 | 🎛️ **6 transition styles** | `apple_automix`, `harmonic_layer`, `energy_punch`, `build_drop`, `palate_cleanser`, `smooth_blend` |
-| 🎤 **Vocal‑aware crossfading** | LR4 Linkwitz‑Riley 3‑band frequency sweep with ducking preserves vocal clarity |
-| 🧠 **Smart ordering** | Mood progression (sad → happy), key compatibility, energy curves |
-| 🥁 **Beat‑snapped alignment** | Phrase → downbeat → beat‑phase → micro‑correlation hierarchy |
-| ⏱️ **Tempo ramp** | Pitch‑preserving phase vocoder for seamless BPM changes |
-| 🚀 **Apple Silicon GPU** | Metal Performance Shaders (MPS) for STFT / chroma / cross‑correlation |
-| 📦 **Per‑pair export** | Each transition saved as a standalone file + full mix |
-| 🔊 **EBU R128 loudness** | Consistent listening levels across every track |
+| 🎤 **Vocal‑aware crossfading** | A 3‑band frequency sweep with ducking so vocals never get buried |
+| 🧠 **Smart ordering** | Goes from sad → happy, keeps keys and energy curves smooth |
+| 🥁 **Beat‑snapped alignment** | Locks onto phrases, downbeats, beats — down to the sample |
+| ⏱️ **Tempo ramp** | Changes BPM without changing pitch (phase vocoder magic) |
+| 🚀 **Apple Silicon GPU** | Uses MPS for STFT, chroma, cross‑correlation — fast |
+| 📦 **Per‑pair export** | Every transition is a standalone file + the full mix |
+| 🔊 **EBU R128 loudness** | So you're not reaching for the volume knob every track |
 
 ---
 
-## 📋 Requirements
+## 📋 What You'll Need
 
-- Python **≥ 3.10**
-- **macOS** (Apple Silicon recommended for GPU)
+- Python **3.10 or newer**
+- A **Mac** — Apple Silicon is nice for GPU, but Intel works too
 
 ### Dependencies
 
-| Package | Min | Role |
+| Package | Min version | What it's for |
 |---|---|---|
-| `librosa` | 0.10.0 | 🎵 Audio analysis, beat tracking, phase vocoder |
-| `numpy` | 1.24.0 | 🔢 Array computation |
-| `scipy` | 1.10.0 | ⚙️ Signal processing, filtering, correlation |
-| `soundfile` | 0.12.0 | 💾 Audio file I/O |
-| `pyloudnorm` | 0.1.0 | 📊 EBU R128 loudness normalisation |
-| `psutil` | 5.9.0 | 📈 System memory monitor |
-| `torch` | 1.12.0 *opt.* | 🚀 GPU acceleration via MPS |
+| `librosa` | 0.10.0 | 🎵 Audio analysis, beat tracking, the phase vocoder |
+| `numpy` | 1.24.0 | 🔢 Everything numerical |
+| `scipy` | 1.10.0 | ⚙️ Filtering, correlation, signal processing |
+| `soundfile` | 0.12.0 | 💾 Reading and writing audio files |
+| `pyloudnorm` | 0.1.0 | 📊 Making everything sound equally loud |
+| `psutil` | 5.9.0 | 📈 Keeping an eye on memory usage |
+| `torch` | 1.12.0 *optional* | 🚀 GPU acceleration via MPS |
 
 ---
 
-## 🛠️ Installation
+## 🛠️ Getting It Running
 
 ```bash
 git clone https://github.com/congnghetinhtu/O-Tune-Engine-AutoMix.git
@@ -84,7 +85,7 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-With GPU support:
+Want GPU?
 
 ```bash
 pip install -e ".[gpu]"
@@ -92,39 +93,39 @@ pip install -e ".[gpu]"
 
 ---
 
-## 🚀 Usage
+## 🚀 Using It
 
-### CLI
+### From the terminal
 
 ```bash
-# Mix all tracks in a folder
+# Mix everything in a folder
 python otune.py /path/to/tracks/
 
-# 30‑second crossfade transitions
+# 30‑second crossfades
 python otune.py /path/to/tracks/ -c 30
 
-# Custom output name
+# Name your mix
 python otune.py /path/to/tracks/ -o my_mix.wav
 
-# CPU‑only mode
+# CPU only (no GPU)
 python otune.py /path/to/tracks/ --no-gpu
 
-# Start from a specific track (1‑based)
+# Start at a specific track (1‑based)
 python otune.py /path/to/tracks/ --start-track 3
 
-# Vocal ducking strategy
+# Vocal ducking
 python otune.py /path/to/tracks/ --vocal-mode duck
 
-# Skip interactive prompt
+# Skip the "which track first?" prompt
 python otune.py /path/to/tracks/ --non-interactive
 
-# Verbose logging
+# See what's happening under the hood
 python otune.py /path/to/tracks/ -v
 ```
 
-### 📁 Output
+### 📁 What comes out
 
-All output goes into `otunedResult/` inside the input folder:
+Everything lands in `otunedResult/` inside your input folder:
 
 ```
 tracks/
@@ -136,18 +137,17 @@ tracks/
 └── Gõ Cửa Trái Tim.mp3
 
 otunedResult/
-├── otune_mix.wav                              ⬅️ full mix (28:13)
-├── 001_Đôi Mắt Người Xưa__Tâm Sự Đời Tôi.wav   ⬅️ transition 1  (42s)
-├── 002_Tâm Sự Đời Tôi__Tình Nhỏ Mau Quên.wav   ⬅️ transition 2  (43s)
-├── 003_Tình Nhỏ Mau Quên__Anh Là Tia Nắng...wav ⬅️ transition 3  (23s)
-├── 004_Anh Là Tia Nắng...__Vợ Tôi.wav          ⬅️ transition 4  (29s)
-└── 005_Vợ Tôi__Gõ Cửa Trái Tim.wav             ⬅️ transition 5  (23s)
+├── otune_mix.wav                              ⬅️ Full mix (28:13)
+├── 001_Đôi Mắt Người Xưa__Tâm Sự Đời Tôi.wav   ⬅️ Transition 1  (42s)
+├── 002_Tâm Sự Đời Tôi__Tình Nhỏ Mau Quên.wav   ⬅️ Transition 2  (43s)
+├── 003_Tình Nhỏ Mau Quên__Anh Là Tia Nắng...wav ⬅️ Transition 3  (23s)
+├── 004_Anh Là Tia Nắng...__Vợ Tôi.wav          ⬅️ Transition 4  (29s)
+└── 005_Vợ Tôi__Gõ Cửa Trái Tim.wav             ⬅️ Transition 5  (23s)
 ```
 
-Each transition is a self‑contained clip with **10 s of musical context** on either side of the
-crossfade — ready to preview or drop straight into a playlist.
+Each transition clip gives you about **10 seconds of musical runway** on either side of the crossfade — ready to preview or drop straight into a playlist.
 
-### 📦 As a library
+### 📦 Using it as a library
 
 ```python
 from otune_engine.core.config import MixConfig
@@ -164,33 +164,33 @@ pipeline.run()
 
 ---
 
-## ⚙️ How It Works
+## ⚙️ How It Works (the short version)
 
 ```
 Discovery  →  Selection  →  Analysis  →  Ordering  →  Mixing  →  Finalization
 ```
 
-| # | Stage | What happens |
+| # | Stage | What's happening |
 |---|---|---|
-| 1 | 🔍 **Discovery** | Scans folder for `.mp3` / `.wav` / `.flac` / `.m4a` / `.aac` / `.ogg` |
-| 2 | 🎯 **Selection** | Interactive prompt for track order or start point |
-| 3 | 📊 **Analysis** | Parallel analysis of tempo, key, energy, vocals, structure, genre, mood |
-| 4 | 🧩 **Ordering** | Smart playlist with mood progression + key/energy compatibility |
-| 5 | 🎚️ **Mixing** | Style selection → phrase‑snapped duration → hierarchical beat alignment → tempo ramp → 3‑band LR4 frequency‑sweep crossfade with vocal ducking → per‑pair export |
-| 6 | 🎵 **Finalization** | Peak limiting + loudness normalization → save full mix |
+| 1 | 🔍 **Discovery** | Scans your folder for `.mp3`, `.wav`, `.flac`, `.m4a`, `.aac`, `.ogg` |
+| 2 | 🎯 **Selection** | Asks you which track to start with, or just rolls through them |
+| 3 | 📊 **Analysis** | Runs everything in parallel — tempo, key, energy, vocals, structure, genre, mood |
+| 4 | 🧩 **Ordering** | Builds a smart playlist: mood curves + harmonic compatibility |
+| 5 | 🎚️ **Mixing** | Picks a style → aligns to phrase/downbeat/beat → ramps tempo → 3‑band frequency‑sweep crossfade → saves the pair |
+| 6 | 🎵 **Finalization** | Adds a peak limiter, evens out loudness, writes the full mix |
 
 ---
 
-## 🎨 Transition Styles
+## 🎨 The 6 Transition Styles
 
-| Style | Trigger | Behaviour |
+| Style | When it kicks in | How it sounds |
 |---|---|---|
-| `harmonic_layer` | Strong key match (≥0.85) | Gentle 0.5‑power curve, high overlap |
-| `apple_automix` | ⭐ Default | 0.5‑power curve + LR4 sweep + vocal ducking |
-| `energy_punch` | Low → high energy jump | Quick cut with short silence gap |
-| `build_drop` | Medium → high energy | Build‑down then drop into next track |
-| `palate_cleanser` | Key clash (≤0.25) | Full fade‑out → silence → fade‑in |
-| `smooth_blend` | Fallback | Equal‑power cosine crossfade |
+| `harmonic_layer` | Strong key match (≥0.85) | Gentle 0.5‑power curve, lots of overlap — buttery |
+| `apple_automix` | ⭐ Default | 0.5‑power curve + LR4 sweep + vocal ducking — the all‑rounder |
+| `energy_punch` | Low → high energy jump | Quick cut with a tiny silence gap — wakes you up |
+| `build_drop` | Medium → high energy | A mini build‑down, then drops into the next track |
+| `palate_cleanser` | Key clash (≤0.25) | Full fade‑out → silence → fade‑in — reset button |
+| `smooth_blend` | Fallback | Equal‑power cosine crossfade — simple and reliable |
 
 ---
 
@@ -198,49 +198,49 @@ Discovery  →  Selection  →  Analysis  →  Ordering  →  Mixing  →  Final
 
 ```
 otune-engine/
-├── 🚪 otune.py                       # CLI entry point
-├── 📄 run_otune.py                   # Minimal example
+├── 🚪 otune.py                       # CLI — the front door
+├── 📄 run_otune.py                   # Minimal example script
 ├── 📦 pyproject.toml
 │
-├── 🧠 otune_engine/                  # Main engine package
-│   ├── core/                         #   Orchestration
-│   │   ├── config.py                 #     Dataclass configs
+├── 🧠 otune_engine/                  # The engine room
+│   ├── core/                         #   Orchestrating everything
+│   │   ├── config.py                 #     All the knobs and dials
 │   │   ├── types.py                  #     Shared types
-│   │   └── pipeline.py               #     Main orchestrator
+│   │   └── pipeline.py               #     The main conductor
 │   │
-│   ├── analysis/                     #   Feature extraction
-│   │   ├── audio_loader.py           #     I/O & loudness
+│   ├── analysis/                     #   Figuring out each song
+│   │   ├── audio_loader.py           #     Reading files, measuring loudness
 │   │   ├── spectral_analyzer.py      #     STFT, chroma, MFCC
-│   │   ├── beat_analyzer.py          #     Tempo, downbeats
-│   │   ├── key_analyzer.py           #     Key detection
-│   │   ├── vocal_analyzer.py         #     Vocal segments
-│   │   ├── structure_analyzer.py     #     Song structure
-│   │   ├── genre_analyzer.py         #     Genre (17 types)
-│   │   └── mood_analyzer.py          #     Mood estimation
+│   │   ├── beat_analyzer.py          #     Tempo, downbeats, swing
+│   │   ├── key_analyzer.py           #     Musical key detection
+│   │   ├── vocal_analyzer.py         #     Where are the vocals?
+│   │   ├── structure_analyzer.py     #     Intro, verse, chorus, outro
+│   │   ├── genre_analyzer.py         #     What kind of music is this?
+│   │   └── mood_analyzer.py          #     Happy? Sad? Energetic?
 │   │
-│   ├── mixing/                       #   Transition engine
-│   │   ├── transition_planner.py     #     Style & params
-│   │   ├── track_ordering.py         #     Smart ordering
-│   │   ├── crossfader.py             #     6 crossfade styles
-│   │   ├── beat_aligner.py           #     Beat alignment
-│   │   ├── tempo_sync.py             #     Phase vocoder
-│   │   ├── vocal_crossfade.py        #     LR4 frequency sweep
+│   ├── mixing/                       #   The actual mixing
+│   │   ├── transition_planner.py     #     Choosing style & parameters
+│   │   ├── track_ordering.py         #     Smart playlist logic
+│   │   ├── crossfader.py             #     6 different crossfade styles
+│   │   ├── beat_aligner.py           #     Locking beats together
+│   │   ├── tempo_sync.py             #     Phase vocoder BPM changes
+│   │   ├── vocal_crossfade.py        #     LR4 frequency sweep magic
 │   │   ├── transition_ding.py        #     Accent sound
 │   │   └── assets/                   #     Audio assets
 │   │
-│   ├── acceleration/                 #   Performance
-│   │   ├── metal_gpu.py              #     MPS GPU
-│   │   └── parallel.py               #     Parallel analysis
+│   ├── acceleration/                 #   Making things fast
+│   │   ├── metal_gpu.py              #     MPS GPU acceleration
+│   │   └── parallel.py               #     Running analysis in parallel
 │   │
 │   └── cache/
-│       └── analysis_cache.py         #   JSON cache
+│       └── analysis_cache.py         #   Caching so you don't re‑analyze
 │
-├── 💿 songs/otunedResult/            # Generated output
+├── 💿 songs/otunedResult/            # Where the magic lands
 │   ├── otune_mix.wav
 │   ├── 001_*__*.wav
 │   └── ...
 │
-├── 📜 src/                           # Legacy v1.x
+├── 📜 src/                           # Legacy v1.x (rest in peace)
 └── 🧪 tests/
     ├── test_refactored.py
     ├── test_transition_styles.py
@@ -251,34 +251,34 @@ otune-engine/
 
 ## ⚙️ Configuration
 
-All settings live in `otune_engine/core/config.py`:
+All the knobs live in `otune_engine/core/config.py`:
 
-| Config | What you can tweak |
+| Config class | What you can tweak |
 |---|---|
-| `AnalysisConfig` | Sample rate, hop length, FFT size, target LUFS, vocal frequency range |
-| `TransitionConfig` | Crossfade duration (3–30 s), vocal mode, duck level, ding, tempo ramp % |
+| `AnalysisConfig` | Sample rate, hop length, FFT size, target loudness, vocal frequency range |
+| `TransitionConfig` | Crossfade duration (3–30 s), vocal mode, duck level, ding sound, tempo ramp % |
 | `AccelerationConfig` | GPU on/off, batch size, worker threads |
-| `CacheConfig` | Enable/disable, cache directory |
+| `CacheConfig` | Turn caching on/off, pick where to store it |
 
 ---
 
-## 🧪 Testing
+## 🧪 Running Tests
 
 ```bash
 pytest tests/
 ```
 
-GPU tests require PyTorch (`pip install -e ".[gpu]"`).
+GPU tests need PyTorch — `pip install -e ".[gpu]"`.
 
 ---
 
 ## 📄 License
 
-**MIT** — Free, permissive, open‑source.
+**MIT** — do whatever you want with it, seriously.
 
-You can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software. The only requirement is that you include the original copyright notice and permission notice in all copies or substantial portions of the software.
+Use it, modify it, sell it, put it in your own project, wrap it in a UI, turn it into a startup. The only thing we ask: keep the copyright notice in there somewhere.
 
-**In plain language:** Do whatever you want — just keep the credit notice.
+**In plain English:** Free as in beer and speech — just don't remove our name.
 
 ---
 
