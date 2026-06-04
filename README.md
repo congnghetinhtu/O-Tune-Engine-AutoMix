@@ -11,8 +11,32 @@
 <p align="center">
   <b>Apple Music‑style automated DJ mixing engine</b><br>
   Analyzes tracks for tempo, key, energy, vocals & structure —<br>
-  then creates seamless transitions with vocal‑aware frequency‑sweep crossfades.
-</p>
+then creates seamless transitions with vocal‑aware frequency‑sweep crossfades.
+
+---
+
+## 🥊 O‑Tune vs Apple Music AutoMix
+
+Apple Music's **AutoMix** (also called Crossfade / Automix on iOS/macOS) is a simple feature that applies a short equal‑power crossfade between consecutive songs. It does **no analysis** — no tempo detection, no key matching, no beat alignment, no vocal awareness. The result is often a generic blend that can clash when tempos differ or vocals overlap.
+
+**O‑Tune Engine** goes far beyond:
+
+| Feature | 🍎 Apple Music AutoMix | 🎧 O‑Tune Engine |
+|---|---|---|
+| **Tempo detection** | ❌ None | ✅ Half/double‑time corrected, swing‑aware |
+| **Tempo ramping** | ❌ Abrupt BPM jump | ✅ Pitch‑preserving phase vocoder ramp |
+| **Beat alignment** | ❌ No alignment | ✅ Phrase → downbeat → beat‑phase → micro‑correlation |
+| **Key matching** | ❌ None | ✅ Krumhansl‑Schmuckler + compatibility scoring |
+| **Vocal awareness** | ❌ Can clash | ✅ LR4 3‑band frequency sweep + ducking |
+| **Energy analysis** | ❌ None | ✅ Spectral energy + variation + mood estimation |
+| **Transition styles** | ❌ Uniform crossfade only | ✅ 6 context‑aware styles |
+| **Smart ordering** | ❌ Album/playlist order only | ✅ Mood progression + key/energy optimisation |
+| **GPU acceleration** | ❌ N/A | ✅ Apple Silicon MPS (M1–M4) |
+| **Per‑pair export** | ❌ Single mix only | ✅ Each transition saved as a separate WAV |
+| **Loudness normalisation** | ❌ None | ✅ EBU R128 (−14 LUFS) |
+| **Genre detection** | ❌ None | ✅ 17 genres |
+
+**Bottom line:** Apple Music AutoMix is a linear crossfade. O‑Tune Engine is a full musical analysis and mixing pipeline that treats every transition as a DJ would — with tempo sync, beat‑matched phrasing, harmonic mixing, and vocal‑protected blends.
 
 ---
 
