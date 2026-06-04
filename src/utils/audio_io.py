@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Tuple
 
 
-def load_audio(file_path: Path, sample_rate: int = 44100) -> Tuple[np.ndarray, int]:
-    """Load audio file at specified sample rate, preserving original channels"""
+def load_audio(file_path: Path, sample_rate: int = 44100) -> Tuple[np.ndarray, int, int]:
+    """Load audio file at specified sample rate, preserving original channels."""
     y, sr = librosa.load(str(file_path), sr=sample_rate, mono=False)
     # librosa returns (n_channels, n_samples) if multi-channel, else (n_samples,)
     if y.ndim == 1:
@@ -50,7 +50,7 @@ def normalize_audio(audio: np.ndarray, sample_rate: int, target_lufs: float = -1
     # Measure current loudness
     try:
         current_loudness = meter.integrated_loudness(audio)
-    except:
+    except Exception:
         # Fallback if audio is too quiet
         return audio
     

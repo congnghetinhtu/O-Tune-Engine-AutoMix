@@ -19,7 +19,7 @@ def get_file_hash(file_path: Path) -> str:
     try:
         with open(file_path, 'rb') as f:
             hash_input += f.read(8192)
-    except:
+    except Exception:
         pass
     
     return hashlib.md5(hash_input).hexdigest()

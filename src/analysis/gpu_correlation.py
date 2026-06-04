@@ -3,6 +3,8 @@ GPU-Accelerated Cross-Correlation for Beat Alignment
 Uses Metal Performance Shaders for ~50x speedup over scipy
 """
 
+import warnings
+
 import torch
 import numpy as np
 import logging
@@ -23,7 +25,7 @@ class GPUCorrelation:
             gpu: AppleSiliconGPU instance
         """
         self.gpu = gpu
-        self.use_gpu = gpu.use_mps
+        self.use_gpu = bool(getattr(gpu, 'use_mps', False))
     
     def phase_correlation(self, audio1: np.ndarray, audio2: np.ndarray, 
                          window_samples: int, sr: int) -> Tuple[np.ndarray, int]:
@@ -81,29 +83,58 @@ class GPUCorrelation:
                 # Pad for FFT
                 n = len(seg1_tensor) + len(seg2_tensor) - 1
                 n_fft = 2 ** int(np.ceil(np.log2(n)))
-                
-                # FFT (Metal-accelerated)
-                fft1 = torch.fft.rfft(seg1_tensor, n=n_fft)
-                fft2 = torch.fft.rfft(seg2_tensor, n=n_fft)
-                
-                # Cross-correlation in frequency domain
-                correlation_fft = fft1 * torch.conj(fft2)
-                
-                # IFFT back to time domain
-                correlation = torch.fft.irfft(correlation_fft, n=n_fft)
-                
-                # Extract search region
-                center = len(correlation) // 2
-                search_start = max(0, center - window_samples)
-                search_end = min(len(correlation), center + window_samples)
-                
+
+                # Compute full linear cross-correlation via convolution with reversed seg2.
+                # This matches scipy.signal.correlate(x, y, mode='full') lag indexing:
+                # lags range from -(len(y)-1) .. (len(x)-1), and zero-lag is at index len(y)-1.
+                seg2_rev = torch.flip(seg2_tensor, dims=[0])
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', '.*output.*resized.*',
+                                            UserWarning)
+                    fft1 = torch.fft.rfft(seg1_tensor, n=n_fft)
+                    fft2 = torch.fft.rfft(seg2_rev, n=n_fft)
+                    conv = torch.fft.irfft(fft1 * fft2, n=n_fft)
+                correlation = conv[:n]
+
+                zero = len(seg2_tensor) - 1
+                search_start = max(0, int(zero - window_samples))
+                search_end = min(int(len(correlation)), int(zero + window_samples + 1))
+
+                # Choose peak via normalized cross-correlation to reduce
+                # overlap-length bias (important for periodic signals).
                 search_region = correlation[search_start:search_end]
-                peak_idx = torch.argmax(search_region)
-                optimal_offset = (peak_idx + search_start - center).item()
+                lags = torch.arange(search_start, search_end, device=correlation.device, dtype=torch.int64) - int(zero)
+
+                x2 = seg1_tensor * seg1_tensor
+                y2 = seg2_tensor * seg2_tensor
+                x2_cum = torch.cat([torch.zeros(1, device=correlation.device), torch.cumsum(x2, dim=0)])
+                y2_cum = torch.cat([torch.zeros(1, device=correlation.device), torch.cumsum(y2, dim=0)])
+                L = int(len(seg1_tensor))
+
+                pos = lags >= 0
+                lpos = torch.clamp(lags, 0, L).to(torch.int64)
+                lneg = torch.clamp(-lags, 0, L).to(torch.int64)
+
+                # Overlap energies for each lag (assuming equal-length segments)
+                ex = torch.where(
+                    pos,
+                    x2_cum[L] - x2_cum[lpos],
+                    x2_cum[torch.clamp(L + lags, 0, L).to(torch.int64)],
+                )
+                ey = torch.where(
+                    pos,
+                    y2_cum[torch.clamp(L - lpos, 0, L).to(torch.int64)],
+                    y2_cum[L] - y2_cum[lneg],
+                )
+
+                denom = torch.sqrt(ex * ey + 1e-12)
+                scores = search_region / denom
+                peak_idx = torch.argmax(scores)
+                optimal_offset = int(lags[peak_idx].item())
             
             # Convert back to NumPy
             correlation_np = self.gpu.to_numpy(correlation)
-            
+
             return correlation_np, int(optimal_offset)
             
         except Exception as e:
@@ -143,18 +174,39 @@ class GPUCorrelation:
             seg1_enhanced = seg1_enhanced / (np.max(np.abs(seg1_enhanced)) + 1e-8)
             seg2_enhanced = seg2_enhanced / (np.max(np.abs(seg2_enhanced)) + 1e-8)
             
-            # Use FFT-based correlation
-            correlation = scipy_signal.correlate(seg1_enhanced, seg2_enhanced, 
-                                                mode='same', method='fft')
-            
-            # Find peak in search window
-            center = len(correlation) // 2
-            search_start = max(0, center - window_samples)
-            search_end = min(len(correlation), center + window_samples)
-            
+            # Full cross-correlation (lags: -(len(y)-1) .. (len(x)-1))
+            correlation = scipy_signal.correlate(
+                seg1_enhanced, seg2_enhanced, mode='full', method='fft'
+            )
+
+            zero = len(seg2_enhanced) - 1
+            search_start = max(0, int(zero - window_samples))
+            search_end = min(int(len(correlation)), int(zero + window_samples + 1))
+
             search_region = correlation[search_start:search_end]
-            peak_idx = np.argmax(search_region)
-            optimal_offset = peak_idx + search_start - center
+            lags = np.arange(search_start, search_end, dtype=np.int64) - int(zero)
+
+            x2 = seg1_enhanced.astype(np.float64) ** 2
+            y2 = seg2_enhanced.astype(np.float64) ** 2
+            x2_cum = np.concatenate([[0.0], np.cumsum(x2)])
+            y2_cum = np.concatenate([[0.0], np.cumsum(y2)])
+            L = len(seg1_enhanced)
+
+            ex = np.empty_like(lags, dtype=np.float64)
+            ey = np.empty_like(lags, dtype=np.float64)
+            pos = lags >= 0
+            kpos = lags[pos]
+            kneg = (-lags[~pos])
+
+            ex[pos] = x2_cum[L] - x2_cum[kpos]
+            ey[pos] = y2_cum[L - kpos]
+            ex[~pos] = x2_cum[L - kneg]
+            ey[~pos] = y2_cum[L] - y2_cum[kneg]
+
+            denom = np.sqrt(ex * ey + 1e-12)
+            scores = search_region / denom
+            peak_idx = int(np.argmax(scores))
+            optimal_offset = int(lags[peak_idx])
             
             return correlation, int(optimal_offset)
             
@@ -176,7 +228,7 @@ class GPUCorrelation:
         try:
             import librosa
             return librosa.onset.onset_strength(y=audio, sr=sr)
-        except:
+        except Exception:
             # Fallback: return zeros
             return np.zeros(len(audio) // 512 + 1)
     
@@ -196,7 +248,7 @@ class GPUCorrelation:
             x_new = np.arange(target_length)
             interpolator = interp1d(x_old, onset_env, bounds_error=False, fill_value=0)
             return interpolator(x_new)
-        except:
+        except Exception:
             # Fallback: return zeros
             return np.zeros(target_length)
     

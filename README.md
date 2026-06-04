@@ -1,166 +1,224 @@
-# SongMix - Professional DJ Auto-Mixing
+# O-Tune Engine v2
 
-A professional-quality automatic DJ mixing system that creates seamless transitions between audio tracks.
+Apple Music-style automated DJ mixing engine optimized for Apple Silicon. Analyzes tracks for tempo, key, energy, vocals, and structure, then creates seamless transitions with vocal-aware frequency-sweep crossfades.
 
 ## Features
 
-- **GPU Acceleration** - 10-27x faster on Apple Silicon (M1/M2/M3/M4)
-- **EBU R128 Loudness Normalization** - Broadcast-standard volume matching
-- **Intelligent Genre Detection** - 12 genres including Country, Cuban Bolero, Vietnamese Pop
-- **Smart Track Ordering** - Optimizes transitions based on compatibility
-- **Beat-Synchronized Mixing** - Aligns beats, downbeats, and phrases
-- **Multiple Transition Styles** - Smooth blend, energy punch, build-drop, etc.
-- **Fluent Crossfades** - 8-second gradual transitions with 50% overlap
-- **Parallel Processing** - Multi-threaded analysis for speed
-- **Caching System** - Fast re-analysis of unchanged tracks
+- **6 transition styles** — `apple_automix`, `harmonic_layer`, `energy_punch`, `build_drop`, `palate_cleanser`, `smooth_blend`
+- **Vocal-aware crossfading** — LR4 Linkwitz-Riley 3-band frequency sweep with ducking preserves vocal clarity during transitions
+- **Smart ordering** — mood progression (sad → happy), key compatibility, energy curves
+- **Beat-snapped alignment** — phrase → downbeat → beat-phase → micro-correlation alignment hierarchy
+- **Tempo ramp** — pitch-preserving phase vocoder for seamless tempo changes during crossfades
+- **Apple Silicon GPU acceleration** — Metal Performance Shaders (MPS) for STFT/chroma/cross-correlation
+- **Per-pair transition export** — each transition saved as a separate file alongside the full mix
+- **EBU R128 loudness normalization** — consistent listening levels across tracks
+
+## Requirements
+
+- Python ≥ 3.10
+- macOS (Apple Silicon recommended for GPU acceleration)
+
+### Dependencies
+
+| Package | Minimum | Purpose |
+|---|---|---|
+| `librosa` | 0.10.0 | Audio analysis, beat tracking, phase vocoder |
+| `numpy` | 1.24.0 | Array computation |
+| `scipy` | 1.10.0 | Signal processing, filtering, correlation |
+| `soundfile` | 0.12.0 | Audio file I/O |
+| `pyloudnorm` | 0.1.0 | EBU R128 loudness normalization |
+| `psutil` | 5.9.0 | System memory monitoring |
+| `torch` | 1.12.0 (optional) | GPU acceleration via MPS |
 
 ## Installation
 
-Basic installation:
 ```bash
-pip install librosa soundfile scipy pyloudnorm
+git clone https://github.com/yourusername/otune-engine.git
+cd otune-engine
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
 ```
 
-**For GPU acceleration (Apple Silicon only):**
+With GPU support:
+
 ```bash
-pip install torch  # Enables Metal GPU acceleration
+pip install -e ".[gpu]"
 ```
-
-## Performance
-
-### GPU Speedup (Apple Silicon)
-
-| Chip Model | Single Track Analysis | Full Mix (10 tracks) |
-|-----------|----------------------|---------------------|
-| M1        | 15-18x faster        | 8.8x faster         |
-| M1 Pro    | 18-22x faster        | 12x faster          |
-| M1 Max    | 22-26x faster        | 18x faster          |
-| M2        | 18-22x faster        | 10x faster          |
-| M2 Pro    | 22-26x faster        | 14x faster          |
-| M2 Max    | 26-30x faster        | 20x faster          |
-| M2 Ultra  | 30-35x faster        | 27x faster          |
-| M3        | 20-24x faster        | 12x faster          |
-| M3 Pro    | 24-28x faster        | 16x faster          |
-| M3 Max    | 28-32x faster        | 22x faster          |
-| M4        | 22-26x faster        | 14x faster          |
-
-GPU acceleration automatically enabled when:
-- Apple Silicon Mac (M1/M2/M3/M4)
-- PyTorch installed
-- macOS 12.3+ 
-
-Gracefully falls back to CPU on Intel Macs.
 
 ## Usage
 
-Basic usage (GPU auto-enabled on Apple Silicon):
+### CLI
+
 ```bash
-./automix tracks/
+# Mix all tracks in a folder
+python otune.py /path/to/tracks/
+
+# 30-second crossfade transitions
+python otune.py /path/to/tracks/ -c 30
+
+# Custom output name
+python otune.py /path/to/tracks/ -o my_mix.wav
+
+# CPU-only mode
+python otune.py /path/to/tracks/ --no-gpu
+
+# Start from a specific track (1-based)
+python otune.py /path/to/tracks/ --start-track 3
+
+# Vocal ducking strategy
+python otune.py /path/to/tracks/ --vocal-mode duck
+
+# Skip interactive prompt
+python otune.py /path/to/tracks/ --non-interactive
+
+# Verbose logging
+python otune.py /path/to/tracks/ -v
 ```
 
-Custom options:
-```bash
-./automix tracks/ -o output.wav -c 10 --start-track 3
+### Output
+
+All output goes into `otunedResult/` inside the input folder:
+
+```
+tracks/
+├── Đôi Mắt Người Xưa.mp3
+├── Tâm Sự Đời Tôi.mp3
+├── Tình Nhỏ Mau Quên.mp3
+├── Anh Là Tia Nắng Trong Em - Lâm Thúy Vân.mp3
+├── Vợ Tôi.mp3
+└── Gõ Cửa Trái Tim.mp3
+
+otunedResult/
+├── otune_mix.wav                              # full mix (28:13)
+├── 001_Đôi Mắt Người Xưa__Tâm Sự Đời Tôi.wav   # transition 1  (42s)
+├── 002_Tâm Sự Đời Tôi__Tình Nhỏ Mau Quên.wav   # transition 2  (43s)
+├── 003_Tình Nhỏ Mau Quên__Anh Là Tia Nắng...wav # transition 3  (23s)
+├── 004_Anh Là Tia Nắng...__Vợ Tôi.wav          # transition 4  (29s)
+└── 005_Vợ Tôi__Gõ Cửa Trái Tim.wav             # transition 5  (23s)
 ```
 
-GPU control:
-```bash
-# Force CPU only (useful for testing)
-./automix tracks/ --no-gpu
+Each transition file is a self-contained clip centered on the crossfade with
+10 s of musical context on either side — ready to preview or drop into a
+playlist.
 
-# Benchmark GPU vs CPU performance
-./automix tracks/ --benchmark
+### As a library
 
-# Custom GPU batch size (default: auto-detect)
-./automix tracks/ --gpu-batch 8
+```python
+from otune_engine.core.config import MixConfig
+from otune_engine.core.pipeline import MixPipeline
+from pathlib import Path
+
+config = MixConfig(
+    input_folder=Path("/path/to/tracks"),
+    output_file="my_mix.wav",
+)
+pipeline = MixPipeline(config)
+pipeline.run()
 ```
 
-## Architecture
+## How It Works
 
-### Module Structure
+The pipeline runs in six stages:
+
+1. **Discovery** — scans the input folder for supported audio files (.mp3, .wav, .flac, .m4a, .aac, .ogg)
+2. **Selection** — interactive prompt for track order or start point (skippable with `--non-interactive`)
+3. **Analysis** — each track is analyzed in parallel for tempo, key, energy, spectral features, vocal segments, structure, genre, and mood
+4. **Ordering** — tracks are ordered for optimal flow using mood progression, key compatibility, and energy curves
+5. **Mixing** — for each adjacent pair:
+   - Transition style is selected based on musical context
+   - Crossfade duration is snapped to phrase/downbeat boundaries
+   - Beats are aligned at phrase → downbeat → beat → sub-millisecond precision
+   - Tempo is ramped (vocal-to-vocal excluded to avoid phase-vocoder artifacts)
+   - 3-band LR4 frequency-sweep crossfade is applied with vocal ducking
+   - Each transition is exported as a standalone file
+6. **Finalization** — peak limiting and loudness normalization, then save the full mix
+
+## Transition Styles
+
+| Style | When Used | Behavior |
+|---|---|---|
+| `harmonic_layer` | Strong key match (≥0.85) | Gentle 0.5-power curve, high overlap |
+| `apple_automix` | Default | 0.5-power curve with LR4 frequency sweep, vocal ducking |
+| `energy_punch` | Low → high energy jump | Quick cut with short silence gap |
+| `build_drop` | Medium → high energy | Build-down then drop into next track |
+| `palate_cleanser` | Key clash (≤0.25) | Full fade-out, silence gap, fade-in |
+| `smooth_blend` | Fallback | Equal-power cosine crossfade |
+
+## Project Structure
+
 ```
-src/
-├── constants.py          # Configuration constants
-├── utils/               # Utility functions
-│   ├── audio_io.py     # Audio loading/saving/normalization
-│   ├── file_utils.py   # File hashing and discovery
-│   ├── apple_silicon_gpu.py  # GPU hardware detection (NEW)
-│   └── benchmark.py    # Performance benchmarking (NEW)
-├── analysis/            # Audio analysis modules  
-│   ├── genre_detector.py     # Genre classification
-│   ├── beat_detector.py      # Beat/tempo detection
-│   ├── key_detector.py       # Musical key detection
-│   ├── track_analyzer.py     # Complete track analysis
-│   ├── gpu_features.py       # GPU-accelerated STFT/chroma (NEW)
-│   └── gpu_correlation.py    # GPU-accelerated correlation (NEW)
-├── mixing/              # Audio mixing modules
-│   ├── crossfade.py         # Crossfade generation
-│   ├── transitions.py       # Transition styles
-│   └── volume_matcher.py    # Volume management
-└── core/                # Core engine
-    ├── mixer.py             # Main AutoMixer class
-    └── cache.py             # Caching system
+otune-engine/
+├── otune.py                          # CLI entry point
+├── run_otune.py                      # Minimal example
+├── pyproject.toml
+│
+├── otune_engine/                     # Main engine package
+│   ├── core/
+│   │   ├── config.py                 # Configuration dataclasses
+│   │   ├── types.py                  # Shared data types
+│   │   └── pipeline.py               # Main orchestrator
+│   │
+│   ├── analysis/
+│   │   ├── audio_loader.py           # Audio I/O & normalization
+│   │   ├── spectral_analyzer.py      # STFT, chroma, MFCC
+│   │   ├── beat_analyzer.py          # Tempo, downbeats, time sig
+│   │   ├── key_analyzer.py           # Key detection
+│   │   ├── vocal_analyzer.py         # Vocal segment detection
+│   │   ├── structure_analyzer.py     # Song structure parsing
+│   │   ├── genre_analyzer.py         # Genre classification
+│   │   └── mood_analyzer.py          # Mood estimation
+│   │
+│   ├── mixing/
+│   │   ├── transition_planner.py     # Style selection & params
+│   │   ├── track_ordering.py         # Smart playlist ordering
+│   │   ├── crossfader.py             # Crossfade styles
+│   │   ├── beat_aligner.py           # Beat alignment
+│   │   ├── tempo_sync.py             # Phase vocoder tempo ramp
+│   │   ├── vocal_crossfade.py        # LR4 frequency-sweep
+│   │   ├── transition_ding.py        # Accent sound
+│   │   └── assets/                   # Audio assets
+│   │
+│   ├── acceleration/
+│   │   ├── metal_gpu.py              # MPS GPU acceleration
+│   │   └── parallel.py               # Parallel analysis
+│   │
+│   └── cache/
+│       └── analysis_cache.py         # Analysis result caching
+│
+├── songs/                            # Generated output
+│   └── otunedResult/
+│       ├── otune_mix.wav             # Full mix (28:13)
+│       ├── 001_Đôi Mắt Người Xưa__Tâm Sự Đời Tôi.wav
+│       ├── 002_Tâm Sự Đời Tôi__Tình Nhỏ Mau Quên.wav
+│       ├── 003_Tình Nhỏ Mau Quên__Anh Là Tia Nắng Trong Em.wav
+│       ├── 004_Anh Là Tia Nắng Trong Em__Vợ Tôi.wav
+│       └── 005_Vợ Tôi__Gõ Cửa Trái Tim.wav
+│
+├── src/                              # Legacy v1.x
+└── tests/
+    ├── test_refactored.py
+    ├── test_transition_styles.py
+    └── test_gpu_acceleration.py
 ```
-
-### Key Components
-
-1. **Track Analysis** (`src/analysis/`)
-   - Tempo detection with double/half-time handling
-   - Beat, downbeat, and phrase detection
-   - Musical key using Krumhansl-Schmuckler algorithm
-   - Genre classification (9 genres)
-   - Vocal segment detection
-
-2. **Crossfade Engine** (`src/mixing/`)
-   - Equal-power crossfading with 0.7 exponent curves
-   - 50% overlap boost for fullness
-   - 64-sample edge ramps for smoothness
-   - 5 transition styles based on compatibility
-
-3. **Volume Management**
-   - Per-track EBU R128 normalization to -14 LUFS
-   - No dynamic adjustments (eliminates pumping)
-   - Clipping prevention only
-
-## Algorithm Overview
-
-1. **Load & Normalize** - Each track normalized to -14 LUFS
-2. **Analyze** - Extract tempo, beats, key, genre, vocals
-3. **Order** - Smart sequencing for optimal flow
-4. **Mix** - Create crossfades with beat alignment
-5. **Export** - Final limiting and stereo output
 
 ## Configuration
 
-Edit `src/constants.py` to change defaults:
-- `DEFAULT_CROSSFADE_DURATION = 8.0`  # seconds
-- `DEFAULT_TARGET_LUFS = -14.0`       # EBU R128 standard
-- `DEFAULT_MAX_WORKERS = 4`           # parallel threads
+All settings are dataclass-based in `otune_engine/core/config.py`:
 
-## Performance Optimizations
+- **AnalysisConfig** — sample rate, hop length, FFT size, target LUFS, vocal frequency range
+- **TransitionConfig** — crossfade duration (3–30s), vocal mode, duck level, ding, tempo ramp
+- **AccelerationConfig** — GPU on/off, batch size, worker threads
+- **CacheConfig** — enable/disable, cache directory
 
-- **GPU Acceleration**: Metal Performance Shaders on Apple Silicon (10-27x speedup)
-  - Auto-detects M1/M2/M3/M4 chip model and GPU cores
-  - Adaptive batch sizing based on available memory
-  - Zero-copy unified memory architecture
-  - Graceful CPU fallback on non-Apple Silicon Macs
-- **Caching**: JSON-based with MD5 hashing
-- **Parallel**: Multi-threaded analysis (4 workers default)
-- **Optimized**: Vectorized operations, single STFT computation
+## Testing
 
-## Supported Formats
+```bash
+pytest tests/
+```
 
-MP3, WAV, FLAC, M4A, AAC, OGG
+GPU tests require PyTorch (`pip install -e ".[gpu]"`).
 
-## Technical Details
+## License
 
-- **Sample Rate**: 44.1 kHz
-- **Bit Depth**: 32-bit float internal, 16-bit output
-- **Normalization**: EBU R128 / BS.1770 (-14 LUFS)
-- **Crossfade**: 8s default, adaptive 5.6-11.2s range
-- **Key Detection**: Krumhansl-Schmuckler correlation
-- **Beat Detection**: Librosa + confidence scoring
-
-## Version
-
-1.0.0 - Production release
+MIT

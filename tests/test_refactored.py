@@ -8,8 +8,11 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.constants import *
-from src.utils import *
+from src.constants import (
+    MAJOR_PROFILE, MINOR_PROFILE, KEY_NAMES, SUPPORTED_FORMATS,
+    DEFAULT_CROSSFADE_DURATION, DEFAULT_SAMPLE_RATE, DEFAULT_TARGET_LUFS,
+)
+from src.utils import get_file_hash, get_audio_files, normalize_audio, load_audio, save_audio
 from src.analysis import GenreDetector
 import numpy as np
 
@@ -118,7 +121,7 @@ def test_audio_load_save():
     # Load first audio file
     test_file = audio_files[0]
     print(f"  Loading: {test_file.name}")
-    audio, sr = load_audio(test_file, sample_rate=44100)
+    audio, sr, _ = load_audio(test_file, sample_rate=44100)
     
     assert len(audio) > 0, "Audio should not be empty"
     assert sr == 44100, "Sample rate should be 44100"

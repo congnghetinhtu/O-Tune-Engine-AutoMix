@@ -1,7 +1,7 @@
 """
 Performance benchmarking utilities for GPU vs CPU comparison.
 
-Measures execution time, memory usage, and speedup factors for AutoMix operations.
+Measures execution time, memory usage, and speedup factors for OTune Engine operations.
 """
 
 import time

@@ -35,7 +35,7 @@ class AppleSiliconGPU:
                 return
             
             # Get chip model
-            result = subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string'])
+            result = subprocess.check_output(['/usr/sbin/sysctl', '-n', 'machdep.cpu.brand_string'])
             chip_name = result.decode().strip()
             
             # Parse chip model
@@ -90,7 +90,7 @@ class AppleSiliconGPU:
                 self.gpu_cores = 8  # Default
             
             # Get total memory
-            result = subprocess.check_output(['sysctl', '-n', 'hw.memsize'])
+            result = subprocess.check_output(['/usr/sbin/sysctl', '-n', 'hw.memsize'])
             self.memory_gb = int(result.decode().strip()) / (1024 ** 3)
             
             logger.info(f"Detected Apple Silicon: {self.chip_model}")
@@ -132,7 +132,8 @@ class AppleSiliconGPU:
             test_result = (test_mps * 2).cpu()
             
             if torch.allclose(test_result, torch.tensor([2.0, 4.0, 6.0])):
-                self.device = torch.device('mps')
+                # Keep this as a string for consistency (torch APIs accept it).
+                self.device = 'mps'
                 self.use_mps = True
                 logger.info("✓ Metal Performance Shaders (MPS) initialized successfully")
             else:
@@ -214,18 +215,26 @@ class AppleSiliconGPU:
             mem = psutil.virtual_memory()
             
             return {
-                'total': mem.total / (1024 ** 3),  # GB
+                # Preferred keys (used by tests)
+                'total_gb': mem.total / (1024 ** 3),  # GB
+                'available_gb': mem.available / (1024 ** 3),
+                'used_gb': mem.used / (1024 ** 3),
+                'usage_percent': mem.percent,
+                # Backwards-compatible aliases
+                'total': mem.total / (1024 ** 3),
                 'available': mem.available / (1024 ** 3),
                 'used': mem.used / (1024 ** 3),
-                'usage_percent': mem.percent
             }
         except ImportError:
             logger.warning("psutil not installed, cannot get memory info")
             return {
+                'total_gb': self.memory_gb if self.memory_gb else 0,
+                'available_gb': 0,
+                'used_gb': 0,
+                'usage_percent': 0,
                 'total': self.memory_gb if self.memory_gb else 0,
                 'available': 0,
                 'used': 0,
-                'usage_percent': 0
             }
     
     def __repr__(self):

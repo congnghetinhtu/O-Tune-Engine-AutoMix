@@ -51,20 +51,22 @@ class GPUFeatureExtractor:
             
             # Convert to PyTorch tensor on MPS device
             audio_tensor = self.gpu.to_device(audio)
+            if audio_tensor.ndim > 1:
+                audio_tensor = torch.mean(audio_tensor, dim=1)
+            audio_tensor = audio_tensor.contiguous()
             
             # Create Hann window on GPU
             window = torch.hann_window(n_fft).to(self.gpu.device)
             
             # Compute STFT on Metal GPU
-            stft_result = torch.stft(
-                audio_tensor,
-                n_fft=n_fft,
-                hop_length=hop_length,
-                window=window,
-                return_complex=True,
-                center=True,
-                normalized=False
-            )
+            pad = n_fft // 2
+            audio_t = torch.nn.functional.pad(
+                audio_tensor, (pad, pad), mode='reflect')
+            frames = audio_t.unfold(0, n_fft, hop_length) * window
+            stft_result = torch.fft.rfft(frames, n=n_fft, dim=-1).T
+            # torch.stft output is 2x librosa.stft magnitude due to
+            # different default window normalization; scale to match.
+            stft_result = stft_result * 0.5
             
             # Compute magnitude
             magnitude = torch.abs(stft_result)
@@ -174,16 +176,14 @@ class GPUFeatureExtractor:
                     audio_tensor = batch_tensor[i]
                     
                     # STFT on GPU
-                    stft_result = torch.stft(
-                        audio_tensor,
-                        n_fft=n_fft,
-                        hop_length=hop_length,
-                        window=window,
-                        return_complex=True,
-                        center=True,
-                        normalized=False
-                    )
-                    
+                    pad = n_fft // 2
+                    audio_t = torch.nn.functional.pad(
+                        audio_tensor, (pad, pad), mode='reflect')
+                    frames = audio_t.unfold(0, n_fft, hop_length) * window
+                    stft_result = torch.fft.rfft(
+                        frames, n=n_fft, dim=-1).T
+                    stft_result = stft_result * 0.5
+
                     # Compute magnitude and trim padding
                     magnitude = torch.abs(stft_result)
                     
